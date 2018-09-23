@@ -10,6 +10,10 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: Book
+  properties:
+  - name: name
+
 - kind: Greeting
   ancestor: yes
   properties:
