@@ -2,6 +2,7 @@
 {% autoescape true %}
 <html>
   <body>
+    <div>guestbook name: {{guestbook_name}}</div>
     {% if (greetings is defined) and greetings  %}
       {% for greeting in greetings %}
         <div class="row">
