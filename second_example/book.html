@@ -5,12 +5,17 @@
     <h1>guestbook name</h1>
     <div>{{guestbook_name}}</div>
     <h2>greetings</h2>
-    {% if (greetings is defined) and greetings  %}
+    {% if (greetings is defined) and greetings %}
       {% for greeting in greetings %}
         <div class="row">
-          <blockquote>
-            {{ greeting.content }}
-          </blockquote>
+            <form action="/books/{{guestbook_name}}/{{greeting.content}}/delete" method="post">
+              <div>
+                  <blockquote>
+                      {{ greeting.content }}
+                      <input type="submit" value="delete">
+                  </blockquote>
+              </div>
+            </form>
         </div>
       {% endfor %}
     {% else %}

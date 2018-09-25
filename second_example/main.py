@@ -34,7 +34,8 @@ import jinja2
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'],
-    autoescape=True)
+    autoescape=True,
+    trim_blocks=True)
 
 
 @ndb.transactional
@@ -53,6 +54,7 @@ class Tag(ndb.Model):
     @classmethod
     def query_by_type(cls, type):
         return cls.query(cls.type == type)
+
 
 class Book(ndb.Model):
     name = ndb.StringProperty()
@@ -169,12 +171,22 @@ class AddTag(webapp2.RequestHandler):
         self.redirect('/books/' + guestbook_name)
 
 
+class DeleteGreeting(webapp2.RequestHandler):
+    def post(self, guestbook_name, content):
+        q = Book.query_by_name(guestbook_name)
+        book_key = q.fetch(keys_only=True)[0]
+        greeting = Greeting.query_book(book_key).fetch(Greeting.content==content)
+        greeting.key.delete()
+        self.redirect('/books/' + guestbook_name)
+
+
 app = webapp2.WSGIApplication([
     webapp2.Route('/', handler=BookList, name='BookList'),
     webapp2.Route('/add_book', handler=AddBook),
     webapp2.Route('/books/<guestbook_name>', handler=BookPage),
     webapp2.Route('/books/<guestbook_name>/post', handler=SubmitForm),
     webapp2.Route('/books/<guestbook_name>/update', handler=UpdateForm),
-    webapp2.Route('/books/<guestbook_name>/addtag', handler=AddTag)
+    webapp2.Route('/books/<guestbook_name>/addtag', handler=AddTag),
+    webapp2.Route('/books/<guestbook_name>/<content>/delete', handler=DeleteGreeting)
 ])
 # [END all]
