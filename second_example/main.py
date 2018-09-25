@@ -92,9 +92,8 @@ class SubmitForm(webapp2.RequestHandler):
 
 class UpdateForm(webapp2.RequestHandler):
     def post(self, guestbook_name):
-        old_guestbook_name = self.request.get('old_guestbook_name')
         new_guestbook_name = self.request.get('new_guestbook_name')
-        q = Book.query_by_name(old_guestbook_name)
+        q = Book.query_by_name(guestbook_name)
         book_key = q.fetch(keys_only=True)[0]
         book = book_key.get()
         book.name = new_guestbook_name
