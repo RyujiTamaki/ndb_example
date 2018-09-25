@@ -14,6 +14,12 @@
     {% else %}
       <div>No Greetings</div>
     {% endif %}
+    <div>tags</div>
+    {% for tag in tags %}
+      <blockquote>
+        {{ tag }}
+      </blockquote>
+    {% endfor %}
     <form action="/books/{{guestbook_name}}/post" method="post">
       <div>
         <textarea name="content" rows="3" cols="60">
@@ -29,6 +35,12 @@
         <input value="{{guestbook_name}}" name="old_guestbook_name" type="hidden">
         <input value="{{new_guestbook_name}}" name="new_guestbook_name">
         <input type="submit" value="update">
+    </form>
+    <form action="/books/{{guestbook_name}}/addtag" method="post">
+      New tag:
+        <input value="{{guestbook_name}}" name="guestbook_name" type="hidden">
+        <input value="" name="tag_type">
+        <input type="submit" value="add tag">
     </form>
   </body>
 </html>

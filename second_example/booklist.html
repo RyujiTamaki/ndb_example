@@ -16,8 +16,10 @@
         <div>No Guestbooks</div>
       {% endif %}
 
-      <form action="/add_book", method="post">Add Guestbook:
-        <input value="{{guestbook_name}}" name="guestbook_name" required>
+      <form action="/add_book", method="post">
+        Add Guestbook:<br>
+        Guestbook name:<input value="{{guestbook_name}}" name="guestbook_name" required><br>
+        tag type:<input name="tag_type">
         <input type="submit" value="add">
       </form>
 

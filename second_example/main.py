@@ -37,8 +37,13 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 
+class Tag(ndb.Model):
+    type = ndb.StringProperty()
+
+
 class Book(ndb.Model):
     name = ndb.StringProperty()
+    tag = ndb.KeyProperty(kind=Tag, repeated=True)
 
     @classmethod
     def query_by_name(cls, name):
@@ -59,8 +64,15 @@ class BookPage(webapp2.RequestHandler):
     def get(self, guestbook_name):
         q = Book.query_by_name(guestbook_name)
         book_key = q.fetch(keys_only=True)[0]
+        book = book_key.get()
         greetings = Greeting.query_book(book_key).fetch(20)
+
+        tags = []
+        for tag_key in book.tag:
+            tags.append(tag_key.id())
+
         template_values = {
+            'tags': tags,
             'guestbook_name': guestbook_name,
             'greetings': greetings
         }
@@ -94,6 +106,13 @@ class AddBook(webapp2.RequestHandler):
     def post(self):
         guestbook_name = self.request.get('guestbook_name')
         book = Book(name=guestbook_name)
+
+        tag_type = self.request.get('tag_type')
+        if tag_type:
+            tag = Tag(id=tag_type, type=tag_type)
+            tag_key = tag.put()
+            book.tag = [tag_key]
+
         book.put()
         self.redirect('/')
 
