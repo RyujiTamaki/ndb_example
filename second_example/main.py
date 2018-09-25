@@ -40,6 +40,9 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 class Tag(ndb.Model):
     type = ndb.StringProperty()
 
+    @classmethod
+    def query_by_type(cls, type):
+        return cls.query(cls.type == type)
 
 class Book(ndb.Model):
     name = ndb.StringProperty()
@@ -118,7 +121,13 @@ class AddBook(webapp2.RequestHandler):
 
 class BookList(webapp2.RequestHandler):
     def get(self):
-        books_query = Book.query().order(Book.name)
+        tag_type = self.request.get('tag')
+        if tag_type:
+            q = Tag.query_by_type(tag_type)
+            tag_key = q.fetch(keys_only=True)[0]
+            books_query = Book.query(Book.tag==tag_key).order(Book.name)
+        else:
+            books_query = Book.query().order(Book.name)
         books = books_query.fetch()
         template_values = {
             'books': books

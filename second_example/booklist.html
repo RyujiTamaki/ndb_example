@@ -15,7 +15,9 @@
               <td><a href={{ "books/" + book.name }}>{{ book.name }}</a></td>
               <td>
                 {% for tag in book.tag %}
-                  <span>{{ tag.id() }}</span>
+                  <span>
+                    <a href={{ "/?tag=" ~ tag.id() }}>{{ tag.id() }}</a>
+                  </span>
                 {% endfor %}
               </td>
             </tr>
