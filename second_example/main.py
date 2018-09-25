@@ -128,11 +128,34 @@ class BookList(webapp2.RequestHandler):
         self.response.write(template.render(template_values))
 
 
+class AddTag(webapp2.RequestHandler):
+    def post(self, guestbook_name):
+        print("AddTag")
+        q = Book.query_by_name(guestbook_name)
+        book_key = q.fetch(keys_only=True)[0]
+        book = book_key.get()
+
+        tag_keys = []
+        for tag_key in book.tag:
+            tag_keys.append(tag_key)
+
+        tag_type = self.request.get('tag_type')
+        if tag_type:
+            tag = Tag(id=tag_type, type=tag_type)
+            tag_key = tag.put()
+            tag_keys.append(tag_key)
+
+        book.tag = tag_keys
+        book.put()
+        self.redirect('/books/' + guestbook_name)
+
+
 app = webapp2.WSGIApplication([
     webapp2.Route('/', handler=BookList, name='BookList'),
     webapp2.Route('/add_book', handler=AddBook),
     webapp2.Route('/books/<guestbook_name>', handler=BookPage),
     webapp2.Route('/books/<guestbook_name>/post', handler=SubmitForm),
-    webapp2.Route('/books/<guestbook_name>/update', handler=UpdateForm)
+    webapp2.Route('/books/<guestbook_name>/update', handler=UpdateForm),
+    webapp2.Route('/books/<guestbook_name>/addtag', handler=AddTag)
 ])
 # [END all]
