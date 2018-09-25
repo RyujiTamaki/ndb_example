@@ -40,6 +40,10 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 class Book(ndb.Model):
     name = ndb.StringProperty()
 
+    @classmethod
+    def query_by_name(cls, name):
+        return cls.query(cls.name == name)
+
 
 class Greeting(ndb.Model):
     """Models an individual Guestbook entry with content and date."""
@@ -53,8 +57,9 @@ class Greeting(ndb.Model):
 
 class BookPage(webapp2.RequestHandler):
     def get(self, guestbook_name):
-        ancestor_key = ndb.Key("Book", guestbook_name or "*notitle*")
-        greetings = Greeting.query_book(ancestor_key).fetch(20)
+        q = Book.query_by_name(guestbook_name)
+        book_key = q.fetch(keys_only=True)[0]
+        greetings = Greeting.query_book(book_key).fetch(20)
         template_values = {
             'guestbook_name': guestbook_name,
             'greetings': greetings
@@ -65,48 +70,30 @@ class BookPage(webapp2.RequestHandler):
 
 class SubmitForm(webapp2.RequestHandler):
     def post(self, guestbook_name):
-        greeting = Greeting(parent=ndb.Key("Book",
-                                           guestbook_name or "*notitle*"),
+        q = Book.query_by_name(guestbook_name)
+        book_key = q.fetch(keys_only=True)[0]
+        greeting = Greeting(parent=book_key,
                             content=self.request.get('content'))
         greeting.put()
         self.redirect('/books/' + guestbook_name)
-
-
-@ndb.transactional(xg=True)
-def update_book(book_key, book, greetings):
-    fetch = book_key.get()
-    if fetch is None:
-        print("Book:", book)
-        print("Book name:", book.name)
-        book.put()
-        for g in greetings:
-            print("greeting:", g)
-            greeting = Greeting(parent=ndb.Key("Book", book.name), 
-                                content=g.content,
-                                date=g.date)
-            greeting.put()
-        return True
-    return False
 
 
 class UpdateForm(webapp2.RequestHandler):
     def post(self, guestbook_name):
         old_guestbook_name = self.request.get('old_guestbook_name')
         new_guestbook_name = self.request.get('new_guestbook_name')
-        book_key = ndb.Key(Book, old_guestbook_name)
-        greetings = Greeting.query_book(book_key)
-        print('new_guestbook_name', new_guestbook_name)
-        book = Book(key=book_key, name=new_guestbook_name)
-        update_book(book_key, book, greetings)
+        q = Book.query_by_name(old_guestbook_name)
+        book_key = q.fetch(keys_only=True)[0]
+        book = book_key.get()
+        book.name = new_guestbook_name
+        book.put()
         self.redirect('/books/' + new_guestbook_name)
 
 
 class AddBook(webapp2.RequestHandler):
     def post(self):
         guestbook_name = self.request.get('guestbook_name')
-        book_key = ndb.Key(Book, guestbook_name)
-        book = Book(key=book_key,
-                    name=guestbook_name)
+        book = Book(name=guestbook_name)
         book.put()
         self.redirect('/')
 
@@ -118,8 +105,6 @@ class BookList(webapp2.RequestHandler):
         template_values = {
             'books': books
         }
-        #ndb.delete_multi([k for k in Book.query().fetch(100, keys_only=True)])
-        #ndb.delete_multi([k for k in Greeting.query().fetch(100, keys_only=True)])
         template = JINJA_ENVIRONMENT.get_template('booklist.html')
         self.response.write(template.render(template_values))
 
