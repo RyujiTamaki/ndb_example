@@ -37,6 +37,16 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 
 
+@ndb.transactional
+def insert_if_absent(tag_key, tag):
+    fetch = tag_key.get()
+    if fetch is None:
+        tag.put()
+        return True
+    return False
+
+
+
 class Tag(ndb.Model):
     type = ndb.StringProperty()
 
@@ -111,8 +121,9 @@ class AddBook(webapp2.RequestHandler):
 
         tag_type = self.request.get('tag_type')
         if tag_type:
+            tag_key = ndb.Key('Tag', tag_type)
             tag = Tag(id=tag_type, type=tag_type)
-            tag_key = tag.put()
+            insert_if_absent(tag_key, tag)
             book.tag = [tag_key]
 
         book.put()
@@ -138,7 +149,6 @@ class BookList(webapp2.RequestHandler):
 
 class AddTag(webapp2.RequestHandler):
     def post(self, guestbook_name):
-        print("AddTag")
         q = Book.query_by_name(guestbook_name)
         book_key = q.fetch(keys_only=True)[0]
         book = book_key.get()
@@ -148,9 +158,10 @@ class AddTag(webapp2.RequestHandler):
             tag_keys.append(tag_key)
 
         tag_type = self.request.get('tag_type')
-        if tag_type:
-            tag = Tag(id=tag_type, type=tag_type)
-            tag_key = tag.put()
+        tag_key = ndb.Key('Tag', tag_type)
+        tag = Tag(id=tag_type, type=tag_type)
+
+        if insert_if_absent(tag_key, tag):
             tag_keys.append(tag_key)
 
         book.tag = tag_keys
