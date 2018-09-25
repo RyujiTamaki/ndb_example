@@ -2,7 +2,9 @@
 {% autoescape true %}
 <html>
   <body>
-    <div>guestbook name: {{guestbook_name}}</div>
+    <h1>guestbook name</h1>
+    <div>{{guestbook_name}}</div>
+    <h2>greetings</h2>
     {% if (greetings is defined) and greetings  %}
       {% for greeting in greetings %}
         <div class="row">
@@ -14,12 +16,6 @@
     {% else %}
       <div>No Greetings</div>
     {% endif %}
-    <div>tags</div>
-    {% for tag in tags %}
-      <blockquote>
-        {{ tag }}
-      </blockquote>
-    {% endfor %}
     <form action="/books/{{guestbook_name}}/post" method="post">
       <div>
         <textarea name="content" rows="3" cols="60">
@@ -29,16 +25,22 @@
         <input type="submit" value="Sign Guestbook">
       </div>
     </form>
+    <h2>tags</h2>
+    {% for tag in tags %}
+      <blockquote>
+        {{ tag }}
+      </blockquote>
+    {% endfor %}
+    <form action="/books/{{guestbook_name}}/addtag" method="post">
+      New tag:
+        <input value="" name="tag_type">
+        <input type="submit" value="add tag">
+    </form>
     <hr>
     <form action="/books/{{guestbook_name}}/update" method="post">
       New Guestbook name:
         <input value="{{new_guestbook_name}}" name="new_guestbook_name">
         <input type="submit" value="update">
-    </form>
-    <form action="/books/{{guestbook_name}}/addtag" method="post">
-      New tag:
-        <input value="" name="tag_type">
-        <input type="submit" value="add tag">
     </form>
   </body>
 </html>
