@@ -31,6 +31,8 @@ from google.appengine.ext import ndb
 import webapp2
 import jinja2
 
+from time import sleep
+
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'],
@@ -45,7 +47,6 @@ def insert_if_absent(tag_key, tag):
         tag.put()
         return True
     return False
-
 
 
 class Tag(ndb.Model):
@@ -113,6 +114,7 @@ class UpdateForm(webapp2.RequestHandler):
         book = book_key.get()
         book.name = new_guestbook_name
         book.put()
+        sleep(0.1)
         self.redirect('/books/' + new_guestbook_name)
 
 
@@ -129,6 +131,7 @@ class AddBook(webapp2.RequestHandler):
             book.tag = [tag_key]
 
         book.put()
+        sleep(0.1)
         self.redirect('/')
 
 
