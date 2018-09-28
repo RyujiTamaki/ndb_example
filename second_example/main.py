@@ -52,18 +52,14 @@ def insert_if_absent(tag_key, tag):
 class Tag(ndb.Model):
     type = ndb.StringProperty()
 
-    @classmethod
-    def query_by_type(cls, type):
-        return cls.query(cls.type == type)
+    @property
+    def books(self):
+        return Book.query().filter(Book.tag==self.key).order(Book.name).fetch()
 
 
 class Book(ndb.Model):
     name = ndb.StringProperty()
     tag = ndb.KeyProperty(kind=Tag, repeated=True)
-
-    @classmethod
-    def query_by_name(cls, name):
-        return cls.query(cls.name == name)
 
 
 class Greeting(ndb.Model):
@@ -134,14 +130,16 @@ class AddBook(webapp2.RequestHandler):
 
 class BookList(webapp2.RequestHandler):
     def get(self):
-        tag_type = self.request.get('tag')
-        if tag_type:
-            q = Tag.query_by_type(tag_type)
-            tag_key = q.fetch(keys_only=True)[0]
-            books_query = Book.query(Book.tag==tag_key).order(Book.name)
+        tag_id = self.request.get('tag')
+
+        if tag_id:
+            tag_key = ndb.Key('Tag', str(tag_id))
+            tag = tag_key.get()
+            books = tag.books
         else:
             books_query = Book.query().order(Book.name)
-        books = books_query.fetch()
+            books = books_query.fetch()
+
         template_values = {
             'books': books
         }

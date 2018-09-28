@@ -18,6 +18,12 @@ indexes:
   properties:
   - name: tag
   - name: name
+    direction: desc
+
+- kind: Book
+  properties:
+  - name: tag
+  - name: name
 
 - kind: Greeting
   ancestor: yes
