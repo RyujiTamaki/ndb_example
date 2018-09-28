@@ -3,15 +3,16 @@
 <html>
   <body>
     <h1>guestbook name</h1>
-    <div>{{guestbook_name}}</div>
+    <div>{{book.name}}</div>
     <h2>greetings</h2>
     {% if (greetings is defined) and greetings %}
       {% for greeting in greetings %}
         <div class="row">
-            <form action="/books/{{guestbook_name}}/{{greeting.content}}/delete" method="post">
+            <form action="/books/{{book.key.id()}}/{{greeting.key.id()}}/delete" method="post">
               <div>
                   <blockquote>
                       {{ greeting.content }}
+                      <input type="hidden" value="{{greeting.key.id()}}" name="greeting_id">
                       <input type="submit" value="delete">
                   </blockquote>
               </div>
@@ -21,7 +22,7 @@
     {% else %}
       <div>No Greetings</div>
     {% endif %}
-    <form action="/books/{{guestbook_name}}/post" method="post">
+    <form action="/books/{{book.key.id()}}/post" method="post">
       <div>
         <textarea name="content" rows="3" cols="60">
         </textarea>
@@ -36,13 +37,13 @@
         {{ tag }}
       </blockquote>
     {% endfor %}
-    <form action="/books/{{guestbook_name}}/addtag" method="post">
+    <form action="/books/{{book.key.id()}}/addtag" method="post">
       New tag:
         <input value="" name="tag_type">
         <input type="submit" value="add tag">
     </form>
     <hr>
-    <form action="/books/{{guestbook_name}}/update" method="post">
+    <form action="/books/{{book.key.id()}}/update" method="post">
       New Guestbook name:
         <input value="{{new_guestbook_name}}" name="new_guestbook_name">
         <input type="submit" value="update">

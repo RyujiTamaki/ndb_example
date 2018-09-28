@@ -12,7 +12,7 @@
           </tr>
           {% for book in books %}
             <tr>
-              <td><a href={{ "books/" + book.name }}>{{ book.name }}</a></td>
+              <td><a href={{ "books/" ~ book.key.id() }}>{{ book.name }}</a></td>
               <td>
                 {% for tag in book.tag %}
                   <span>
