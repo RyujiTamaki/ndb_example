@@ -1,0 +1,6 @@
+# python
+*.pyc
+.python-version
+
+# virtualenv
+ndb_example/

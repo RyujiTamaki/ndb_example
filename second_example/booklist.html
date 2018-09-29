@@ -5,19 +5,34 @@
     <h1>Book List</h1>
     <div class="container">
       {% if (books is defined) and books  %}
-        {% for book in books %}
-        <div class="row">
-          <blockquote>
-            <a href={{ "books/" + book.name }}>{{ book.name }}</a>
-          </blockquote>
-        </div>
-        {% endfor %}
+        <table>
+          <tr>
+            <th>name</th>
+            <th>tags</th>
+          </tr>
+          {% for book in books %}
+            <tr>
+              <td><a href={{ "books/" ~ book.key.id() }}>{{ book.name }}</a></td>
+              <td>
+                {% for tag in book.tag %}
+                  <span>
+                    <a href={{ "/?tag=" ~ tag.id() }}>{{ tag.id() }}</a>
+                  </span>
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
       {% else %}
         <div>No Guestbooks</div>
       {% endif %}
 
-      <form action="/add_book", method="post">Add Guestbook:
-        <input value="{{guestbook_name}}" name="guestbook_name" required>
+      <hr>
+      <form action="/add_book", method="post">
+        Add Guestbook:<br>
+        Guestbook name:<input value="{{guestbook_name}}" name="guestbook_name" required><br>
+        tag type:<input name="tag_type">
+        <br>
         <input type="submit" value="add">
       </form>
 

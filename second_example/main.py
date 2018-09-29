@@ -31,14 +31,35 @@ from google.appengine.ext import ndb
 import webapp2
 import jinja2
 
+from time import sleep
+
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'],
-    autoescape=True)
+    autoescape=True,
+    trim_blocks=True)
+
+
+@ndb.transactional
+def insert_if_absent(tag_key, tag):
+    fetch = tag_key.get()
+    if fetch is None:
+        tag.put()
+        return True
+    return False
+
+
+class Tag(ndb.Model):
+    type = ndb.StringProperty()
+
+    @property
+    def books(self):
+        return Book.query().filter(Book.tag==self.key).order(Book.name).fetch()
 
 
 class Book(ndb.Model):
     name = ndb.StringProperty()
+    tag = ndb.KeyProperty(kind=Tag, repeated=True)
 
 
 class Greeting(ndb.Model):
@@ -52,11 +73,18 @@ class Greeting(ndb.Model):
 
 
 class BookPage(webapp2.RequestHandler):
-    def get(self, guestbook_name):
-        ancestor_key = ndb.Key("Book", guestbook_name or "*notitle*")
-        greetings = Greeting.query_book(ancestor_key).fetch(20)
+    def get(self, book_id):
+        book_key = ndb.Key("Book", int(book_id))
+        book = book_key.get()
+        greetings = Greeting.query_book(book_key).fetch(20)
+
+        tags = []
+        for tag_key in book.tag:
+            tags.append(tag_key.id())
+
         template_values = {
-            'guestbook_name': guestbook_name,
+            'book': book,
+            'tags': tags,
             'greetings': greetings
         }
         template = JINJA_ENVIRONMENT.get_template('book.html')
@@ -64,71 +92,96 @@ class BookPage(webapp2.RequestHandler):
 
 
 class SubmitForm(webapp2.RequestHandler):
-    def post(self, guestbook_name):
-        greeting = Greeting(parent=ndb.Key("Book",
-                                           guestbook_name or "*notitle*"),
+    def post(self, book_id):
+        book_key = ndb.Key("Book", int(book_id))
+        greeting = Greeting(parent=book_key,
                             content=self.request.get('content'))
         greeting.put()
-        self.redirect('/books/' + guestbook_name)
-
-
-@ndb.transactional(xg=True)
-def update_book(book_key, book, greetings):
-    fetch = book_key.get()
-    if fetch is None:
-        print("Book:", book)
-        print("Book name:", book.name)
-        book.put()
-        for g in greetings:
-            print("greeting:", g)
-            greeting = Greeting(parent=ndb.Key("Book", book.name), 
-                                content=g.content,
-                                date=g.date)
-            greeting.put()
-        return True
-    return False
+        self.redirect('/books/' + book_id)
 
 
 class UpdateForm(webapp2.RequestHandler):
-    def post(self, guestbook_name):
-        old_guestbook_name = self.request.get('old_guestbook_name')
+    def post(self, book_id):
         new_guestbook_name = self.request.get('new_guestbook_name')
-        book_key = ndb.Key(Book, old_guestbook_name)
-        greetings = Greeting.query_book(book_key)
-        print('new_guestbook_name', new_guestbook_name)
-        book = Book(key=book_key, name=new_guestbook_name)
-        update_book(book_key, book, greetings)
-        self.redirect('/books/' + new_guestbook_name)
+        book_key = ndb.Key("Book", int(book_id))
+        book = book_key.get()
+        book.name = new_guestbook_name
+        book.put()
+        sleep(0.1)
+        self.redirect('/books/' + book_id)
 
 
 class AddBook(webapp2.RequestHandler):
     def post(self):
         guestbook_name = self.request.get('guestbook_name')
-        book_key = ndb.Key(Book, guestbook_name)
-        book = Book(key=book_key,
-                    name=guestbook_name)
+        book = Book(name=guestbook_name)
+
+        tag_type = self.request.get('tag_type')
+        if tag_type:
+            tag_key = ndb.Key('Tag', tag_type)
+            tag = Tag(id=tag_type, type=tag_type)
+            insert_if_absent(tag_key, tag)
+            book.tag = [tag_key]
+
         book.put()
+        sleep(0.1)
         self.redirect('/')
 
 
 class BookList(webapp2.RequestHandler):
     def get(self):
-        books_query = Book.query().order(Book.name)
-        books = books_query.fetch()
+        tag_id = self.request.get('tag')
+
+        if tag_id:
+            tag_key = ndb.Key('Tag', str(tag_id))
+            tag = tag_key.get()
+            books = tag.books
+        else:
+            books_query = Book.query().order(Book.name)
+            books = books_query.fetch()
+
         template_values = {
             'books': books
         }
-        #ndb.delete_multi([k for k in Book.query().fetch(100, keys_only=True)])
-        #ndb.delete_multi([k for k in Greeting.query().fetch(100, keys_only=True)])
         template = JINJA_ENVIRONMENT.get_template('booklist.html')
         self.response.write(template.render(template_values))
+
+
+class AddTag(webapp2.RequestHandler):
+    def post(self, book_id):
+        book_key = ndb.Key("Book", int(book_id))
+        book = book_key.get()
+
+        tag_keys = []
+        for tag_key in book.tag:
+            tag_keys.append(tag_key)
+
+        tag_type = self.request.get('tag_type')
+        tag_key = ndb.Key('Tag', tag_type)
+        tag = Tag(id=tag_type, type=tag_type)
+
+        if insert_if_absent(tag_key, tag):
+            tag_keys.append(tag_key)
+
+        book.tag = tag_keys
+        book.put()
+        self.redirect('/books/' + book_id)
+
+
+class DeleteGreeting(webapp2.RequestHandler):
+    def post(self, book_id, greeting_id):
+        greeting_key = ndb.Key("Book", int(book_id), 'Greeting', int(greeting_id))
+        greeting_key.delete()
+        self.redirect('/books/' + book_id)
 
 
 app = webapp2.WSGIApplication([
     webapp2.Route('/', handler=BookList, name='BookList'),
     webapp2.Route('/add_book', handler=AddBook),
-    webapp2.Route('/books/<guestbook_name>', handler=BookPage),
-    webapp2.Route('/books/<guestbook_name>/post', handler=SubmitForm),
-    webapp2.Route('/books/<guestbook_name>/update', handler=UpdateForm)
+    webapp2.Route('/books/<book_id>', handler=BookPage),
+    webapp2.Route('/books/<book_id>/post', handler=SubmitForm),
+    webapp2.Route('/books/<book_id>/update', handler=UpdateForm),
+    webapp2.Route('/books/<book_id>/addtag', handler=AddTag),
+    webapp2.Route('/books/<book_id>/<greeting_id>/delete', handler=DeleteGreeting)
 ])
 # [END all]

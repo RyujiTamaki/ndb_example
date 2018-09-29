@@ -2,19 +2,27 @@
 {% autoescape true %}
 <html>
   <body>
-    <div>guestbook name: {{guestbook_name}}</div>
-    {% if (greetings is defined) and greetings  %}
+    <h1>guestbook name</h1>
+    <div>{{book.name}}</div>
+    <h2>greetings</h2>
+    {% if (greetings is defined) and greetings %}
       {% for greeting in greetings %}
         <div class="row">
-          <blockquote>
-            {{ greeting.content }}
-          </blockquote>
+            <form action="/books/{{book.key.id()}}/{{greeting.key.id()}}/delete" method="post">
+              <div>
+                  <blockquote>
+                      {{ greeting.content }}
+                      <input type="hidden" value="{{greeting.key.id()}}" name="greeting_id">
+                      <input type="submit" value="delete">
+                  </blockquote>
+              </div>
+            </form>
         </div>
       {% endfor %}
     {% else %}
       <div>No Greetings</div>
     {% endif %}
-    <form action="/books/{{guestbook_name}}/post" method="post">
+    <form action="/books/{{book.key.id()}}/post" method="post">
       <div>
         <textarea name="content" rows="3" cols="60">
         </textarea>
@@ -23,10 +31,20 @@
         <input type="submit" value="Sign Guestbook">
       </div>
     </form>
+    <h2>tags</h2>
+    {% for tag in tags %}
+      <blockquote>
+        {{ tag }}
+      </blockquote>
+    {% endfor %}
+    <form action="/books/{{book.key.id()}}/addtag" method="post">
+      New tag:
+        <input value="" name="tag_type">
+        <input type="submit" value="add tag">
+    </form>
     <hr>
-    <form action="/books/{{guestbook_name}}/update" method="post">
+    <form action="/books/{{book.key.id()}}/update" method="post">
       New Guestbook name:
-        <input value="{{guestbook_name}}" name="old_guestbook_name" type="hidden">
         <input value="{{new_guestbook_name}}" name="new_guestbook_name">
         <input type="submit" value="update">
     </form>
